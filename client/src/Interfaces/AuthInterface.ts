@@ -1,19 +1,11 @@
 export interface UserDetails {
-    user_id: number;
-    first_name: string;
-    middle_name: string | null;
-    last_name: string;
-    suffix_name: string | null;
-    gender: {
-        gender_id: number;
-        gender: string;
-    };
-    birth_date: string;
-    age: string | number;
-    username: string;
+  user_id: number;
+  name: string;
+  username: string;
+  role: "admin" | "staff";
 }
 
-export interface LoginCredentialsErrorFields{
-    username?: string[];
-    password?: string[];
+export interface LoginCredentialsErrorFields {
+  username?: string[];
+  password?: string[];
 }

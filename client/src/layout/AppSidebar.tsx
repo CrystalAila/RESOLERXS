@@ -1,60 +1,59 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useSidebar } from "../contexts/SidebarContext";
+
+const navItems = [
+  { path: "/dashboard", label: "Dashboard" },
+  { path: "/inventory", label: "Inventory" },
+  { path: "/sales", label: "Sales" },
+  { path: "/reports", label: "Reports" },
+  { path: "/users", label: "Users" },
+];
 
 const AppSidebar = () => {
   const { isOpen, toggleSidebar } = useSidebar();
+  const location = useLocation();
 
-  const sidebarItems = [
-    {
-      path: "/genders",
-      text: "Gender",
-    },
-    {
-      path: "/users",
-      text: "Users",
-    },
-  ];
   return (
     <>
       {!isOpen && (
         <div
-          className="fixed inset-0 z-40 blur-lg sm:hidden"
+          className="fixed inset-0 z-40 bg-black/60 sm:hidden"
           onClick={toggleSidebar}
         />
       )}
       <aside
-        id="top-bar-sidebar"
-        className={`fixed top-0 left-0 z-40 w-64 h-full transition-transform ${
+        className={`fixed top-0 left-0 z-50 h-full w-64 border-r border-rx-border bg-rx-surface transition-transform ${
           isOpen ? "-translate-x-full" : "translate-x-0"
         } sm:translate-x-0`}
-        aria-label="Sidebar"
       >
-        <div className="h-full px-3 py-4 overflow-y-auto bg-white dark:bg-gray-800">
-          <a
-            href="https://flowbite.com/"
-            className="flex items-center ps-2.5 mb-5"
-          >
-            <img
-              src="https://flowbite.com/docs/images/logo.svg"
-              className="h-6 me-3"
-              alt="Flowbite Logo"
-            />
-            <span className="self-center text-lg text-heading font-semibold whitespace-nowrap">
-              Flowbite
-            </span>
-          </a>
-          <ul className="space-y-2 font-medium">
-            {sidebarItems.map((sidebarItem, index) => (
-              <li key={index}>
+        <div className="flex h-full flex-col px-4 py-6">
+          <Link to="/dashboard" className="mb-10 px-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-rx-muted">
+              Shoe Store
+            </p>
+            <h1 className="text-2xl font-extrabold tracking-tight text-white">
+              RESOLER<span className="text-rx-accent">XS</span>
+            </h1>
+          </Link>
+          <nav className="flex flex-1 flex-col gap-1">
+            {navItems.map((item) => {
+              const active = location.pathname.startsWith(item.path);
+              return (
                 <Link
-                  to={sidebarItem.path}
-                  className="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
+                  key={item.path}
+                  to={item.path}
+                  onClick={() => window.innerWidth < 640 && toggleSidebar()}
+                  className={`rounded-lg px-4 py-3 text-sm font-semibold uppercase tracking-wider transition-colors ${
+                    active
+                      ? "bg-rx-accent text-white"
+                      : "text-rx-muted hover:bg-white/5 hover:text-white"
+                  }`}
                 >
-                  <span className="ms-3">{sidebarItem.text}</span>
+                  {item.label}
                 </Link>
-              </li>
-            ))}
-          </ul>
+              );
+            })}
+          </nav>
         </div>
       </aside>
     </>

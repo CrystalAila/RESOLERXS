@@ -1,22 +1,18 @@
 import { useCallback, useState } from "react";
-import type { UserColumns } from "../Interfaces/UserInterface";
 
-export const useModal = (initialState: boolean) => {
+export const useModal = <T = null>(initialState = false) => {
   const [isOpen, setIsOpen] = useState(initialState);
-  const [selectedUser, setSelectedUser] = useState<UserColumns | null>(null)
+  const [selected, setSelected] = useState<T | null>(null);
 
-  const openModal = useCallback((user?: UserColumns | null) => {
-    setSelectedUser(user || null)
-    setIsOpen(true)
+  const openModal = useCallback((item?: T | null) => {
+    setSelected(item ?? null);
+    setIsOpen(true);
   }, []);
 
   const closeModal = useCallback(() => {
-    setSelectedUser(null)
-    setIsOpen(false)
+    setSelected(null);
+    setIsOpen(false);
   }, []);
 
-
-  const toggleModal = useCallback(() => setIsOpen((prev) => !prev), []);
-
-  return { isOpen, selectedUser, openModal, closeModal, toggleModal };
+  return { isOpen, selected, openModal, closeModal };
 };

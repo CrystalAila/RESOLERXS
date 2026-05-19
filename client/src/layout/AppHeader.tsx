@@ -1,44 +1,33 @@
+import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 import { useHeader } from "../contexts/HeaderContext";
 import { useSidebar } from "../contexts/SidebarContext";
-import { useAuth } from "../contexts/AuthContext";
-import { useState, type FormEvent } from "react";
+import ReportService from "../services/ReportService";
 
 const AppHeader = () => {
   const { isOpen, toggleUserMenu } = useHeader();
   const { toggleSidebar } = useSidebar();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-
   const [isLoading, setIsLoading] = useState(false);
+  const [lowStockCount, setLowStockCount] = useState(0);
+
+  useEffect(() => {
+    ReportService.dashboard()
+      .then((res) => setLowStockCount(res.data.stats.low_stock_count))
+      .catch(() => setLowStockCount(0));
+  }, []);
 
   const handleLogout = async (e: FormEvent) => {
+    e.preventDefault();
     try {
-      e.preventDefault();
-
       setIsLoading(true);
       await logout();
       navigate("/");
-    } catch (error) {
-      console.error(
-        "Unexpected server error occurred during logging user out: ",
-        error,
-      );
     } finally {
       setIsLoading(false);
     }
-  };
-  const handleUserFullnameFormat = () => {
-    if (!user) return "";
-
-    let fullname = `${user.last_name}, ${user.first_name}`;
-    if (user.middle_name) {
-      fullname += ` ${user.middle_name.charAt(0)}.`;
-    }
-    if (user.suffix_name) {
-      fullname += ` ${user.suffix_name}`;
-    }
-    return fullname;
   };
 
   return (
@@ -46,100 +35,57 @@ const AppHeader = () => {
       {isOpen && (
         <div className="fixed inset-0 z-40" onClick={toggleUserMenu} />
       )}
-      <nav className="fixed top-0 z-50 w-full bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-        <div className="px-3 py-3 lg:px-5 lg:pl-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center justify-start rtl:justify-end">
-              <button
-                data-drawer-target="top-bar-sidebar"
-                data-drawer-toggle="top-bar-sidebar"
-                type="button"
-                onClick={toggleSidebar}
-                className="infline-flex items-center p-2 text-sm text-gray-500 rounded-lg sm:hidden    hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600"
-              >
-                <span className="sr-only">Open sidebar</span>
-                <svg
-                  className="w-6 h-6"
-                  aria-hidden="true"
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke="currentColor"
-                    strokeLinecap="round"
-                    strokeWidth="2"
-                    d="M5 7h14M5 12h14M5 17h10"
-                  />
-                </svg>
-              </button>
-              <a href="https://flowbite.com" className="flex ms-2 md:me-24">
-                <img
-                  src="https://flowbite.com/docs/images/logo.svg"
-                  className="h-6 me-3"
-                  alt="FlowBite Logo"
-                />
-                <span className="self-center text-lg font-semibold whitespace-nowrap dark:text-white">
-                  Flowbite
-                </span>
-              </a>
-            </div>
-            <div className="flex items-center">
-              <div className="flex items-center ms-3">
-                <div>
-                  <button
-                    type="button"
-                    onClick={toggleUserMenu}
-                    className="flex text-sm bg-gray-800 rounded-full focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600"
-                    aria-expanded="false"
-                    data-dropdown-toggle="dropdown-user"
-                  >
-                    <span className="sr-only">Open user menu</span>
-                    <img
-                      className="w-8 h-8 rounded-full"
-                      src="https://flowbite.com/docs/images/people/profile-picture-5.jpg"
-                      alt="user photo"
-                    />
-                  </button>
-                </div>
-                <div
-                  className={`
-                                    absolute right-8 top-9 min-w-50 z-50 ${isOpen ? "block" : "hidden"} my-4 text-base list-none bg-white divide-y divide-gray-100 rounded-sm dark:bg-gray-700 dark:divide-gray-600`}
-                  id="dropdown-user"
-                >
-                  <div
-                    className="px-4 py-3 border-b border-default-medium"
-                    role="none"
-                  >
-                    <p
-                      className="text-sm text-gray-900 truncate dark:text-white"
-                      role="none"
-                    >
-                      {handleUserFullnameFormat()}
-                    </p>
-                  </div>
-                  <ul className="p-2 text-sm text-body font-medium" role="menu">
-                    <li role="none">
-                      <button
-                        type="submit"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300
-                           dark:hover:bg-gray-600 dark:hover:text-white w-full text-start cursor-pointer disabled:cursor-not-allowed"
-                        role="menuitem"
-                        onClick={handleLogout}
-                        disabled={isLoading}
-                      >
-                        {isLoading ? "Signing out..." : "Sign out"}
-                      </button>
-                    </li>
-                  </ul>
-                </div>
+      <header className="fixed top-0 right-0 left-0 z-40 border-b border-rx-border bg-rx-bg/90 backdrop-blur-md sm:left-64">
+        <div className="flex items-center justify-between px-4 py-4 sm:px-8">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={toggleSidebar}
+              className="rounded-lg p-2 text-rx-muted hover:bg-white/5 sm:hidden"
+            >
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h10" />
+              </svg>
+            </button>
+            {lowStockCount > 0 && (
+              <span className="rounded-full bg-rx-accent/20 px-3 py-1 text-xs font-semibold text-rx-accent">
+                {lowStockCount} low stock alert{lowStockCount > 1 ? "s" : ""}
+              </span>
+            )}
+          </div>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={toggleUserMenu}
+              className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-white/5"
+            >
+              <div className="hidden text-right sm:block">
+                <p className="text-sm font-semibold text-white">{user?.name}</p>
+                <p className="text-xs uppercase tracking-wider text-rx-muted">
+                  {user?.role}
+                </p>
               </div>
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-rx-accent text-sm font-bold text-white">
+                {user?.name?.charAt(0) ?? "R"}
+              </div>
+            </button>
+            <div
+              className={`absolute right-0 top-12 min-w-48 rounded-lg border border-rx-border bg-rx-card py-2 shadow-xl ${
+                isOpen ? "block" : "hidden"
+              }`}
+            >
+              <button
+                type="button"
+                onClick={handleLogout}
+                disabled={isLoading}
+                className="w-full px-4 py-2 text-left text-sm text-white hover:bg-white/5 disabled:opacity-50"
+              >
+                {isLoading ? "Signing out..." : "Sign out"}
+              </button>
             </div>
           </div>
         </div>
-      </nav>
+      </header>
     </>
   );
 };

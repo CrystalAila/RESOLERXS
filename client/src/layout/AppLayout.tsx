@@ -4,34 +4,24 @@ import AppHeader from "./AppHeader";
 import { SidebarProvider } from "../contexts/SidebarContext";
 import { HeaderProvider } from "../contexts/HeaderContext";
 
-const LayoutContent = () => {
-  return (
-    <>
-      <div>
-        <AppSidebar />
+const LayoutContent = () => (
+  <div className="min-h-screen bg-rx-bg">
+    <AppSidebar />
+    <AppHeader />
+    <main className="pt-16 pl-0 transition-all sm:pl-64">
+      <div className="p-4 sm:p-8">
+        <Outlet />
       </div>
-      <div>
-        <AppHeader />
-      </div>
-      <div className="pt-20 pl-0 sm:pl-64 min-h-screen">
-        <div className="p-4 sm:p-6">
-          <Outlet />
-        </div>
-      </div>
-    </>
-  );
-};
+    </main>
+  </div>
+);
 
-const AppLayout = () => {
-  return (
-    <>
-      <HeaderProvider>
-        <SidebarProvider>
-          <LayoutContent />
-        </SidebarProvider>
-      </HeaderProvider>
-    </>
-  );
-};
+const AppLayout = () => (
+  <HeaderProvider>
+    <SidebarProvider>
+      <LayoutContent />
+    </SidebarProvider>
+  </HeaderProvider>
+);
 
 export default AppLayout;

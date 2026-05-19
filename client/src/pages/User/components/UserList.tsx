@@ -1,287 +1,116 @@
 import { useCallback, useEffect, useRef, useState, type FC } from "react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHeader,
-  TableRow,
-} from "../../../components/Table";
-import UserService from "../../../services/UserService";
-import { Spinner } from "../../../components/Spinner/Spinner";
-import type { UserColumns } from "../../../Interfaces/UserInterface";
 import FloatingLabelInput from "../../../components/Input/FloatingLabelInput";
+import { Table, TableBody, TableCell, TableHeader, TableRow } from "../../../components/Table";
+import type { UserColumns } from "../../../Interfaces/UserInterface";
+import UserService from "../../../services/UserService";
 
-interface UserlistProps {
-  onAddUser: () => void;
-  onEditUser: (user: UserColumns | null) => void;
-  onDeleteUser: (user: UserColumns | null) => void;
+interface UserListProps {
   refreshKey: boolean;
+  onAdd: () => void;
+  onEdit: (user: UserColumns) => void;
+  onDelete: (user: UserColumns) => void;
 }
 
-const UserList: FC<UserlistProps> = ({
-  onAddUser,
-  onEditUser,
-  onDeleteUser,
-  refreshKey,
-}) => {
-  const [loadingUsers, setLoadingUsers] = useState(false);
+const UserList: FC<UserListProps> = ({ refreshKey, onAdd, onEdit, onDelete }) => {
+  const [loading, setLoading] = useState(false);
   const [users, setUsers] = useState<UserColumns[]>([]);
-  const [usersTableCurrentPage, setUsersTableCurrentPage] = useState(1);
-  const [usersTableLastPage, setUsersTableLastPage] = useState(1);
+  const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
-
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-
   const tableRef = useRef<HTMLDivElement>(null);
 
-  const handleLoadUsers = async (
-    page: number,
-    append = false,
-    search: string,
-  ) => {
+  const load = async (p: number, append: boolean, q: string) => {
     try {
-      setLoadingUsers(true);
-
-      const res = await UserService.loadusers(page, search);
-
-      if (res.status === 200) {
-        const usersData = res.data.users.data || res.data.users || [];
-        const lastPage =
-          res.data.users.last_page ||
-          res.data.last_page ||
-          usersTableLastPage ||
-          1;
-
-        setUsers(append ? [...users, ...usersData] : usersData);
-        setUsersTableCurrentPage(page);
-        setUsersTableLastPage(lastPage);
-        setHasMore(page < lastPage);
-      } else {
-        setUsers(append ? users : []);
-        setHasMore(false);
-      }
-    } catch (error) {
-      console.error(
-        "Unexpected status error occured during loading users: ",
-        error,
-      );
+      setLoading(true);
+      const res = await UserService.loadUsers(p, q);
+      const data = res.data.users.data ?? [];
+      const lp = res.data.users.last_page ?? 1;
+      setUsers(append ? [...users, ...data] : data);
+      setPage(p);
+      setHasMore(p < lp);
+    } catch {
+      if (!append) setUsers([]);
+      setHasMore(false);
     } finally {
-      setLoadingUsers(false);
+      setLoading(false);
     }
   };
 
-  const handleScroll = useCallback(() => {
-    const ref = tableRef.current;
-
-    if (
-      ref &&
-      ref.scrollTop + ref.clientHeight >= ref.scrollHeight - 10 &&
-      hasMore &&
-      !loadingUsers
-    ) {
-      handleLoadUsers(usersTableCurrentPage + 1, true, debouncedSearch);
-    }
-  }, [hasMore, loadingUsers, usersTableCurrentPage]);
-
-  const handleUserFullNameFormat = (user: UserColumns) => {
-    let fullName = "";
-
-    if (user.middle_name) {
-      fullName = `${user.last_name}, ${user.first_name} ${user.middle_name.charAt(0)}.`;
-    } else {
-      fullName = `${user.last_name}, ${user.first_name}`;
-    }
-
-    if (user.suffix_name) {
-      fullName += ` ${user.suffix_name}`;
-    }
-    return fullName;
-  };
-
   useEffect(() => {
-    const ref = tableRef.current;
-
-    if (ref) {
-      ref.addEventListener("scroll", handleScroll);
-    }
-
-    return () => {
-      if (ref) {
-        ref.removeEventListener("scroll", handleScroll);
-      }
-    };
-  }, [handleScroll]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(search);
-    }, 800);
-
-    return () => clearTimeout(timer);
+    const t = setTimeout(() => setDebouncedSearch(search), 500);
+    return () => clearTimeout(t);
   }, [search]);
 
   useEffect(() => {
     setUsers([]);
-    setUsersTableCurrentPage(1);
+    setPage(1);
     setHasMore(true);
-
-    handleLoadUsers(1, false, debouncedSearch);
+    load(1, false, debouncedSearch);
   }, [refreshKey, debouncedSearch]);
+
+  const handleScroll = useCallback(() => {
+    const ref = tableRef.current;
+    if (ref && ref.scrollTop + ref.clientHeight >= ref.scrollHeight - 10 && hasMore && !loading) {
+      load(page + 1, true, debouncedSearch);
+    }
+  }, [hasMore, loading, page, debouncedSearch, users]);
+
+  useEffect(() => {
+    const ref = tableRef.current;
+    ref?.addEventListener("scroll", handleScroll);
+    return () => ref?.removeEventListener("scroll", handleScroll);
+  }, [handleScroll]);
+
   return (
-    <>
-      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
-        <div
-          ref={tableRef}
-          className="relative max-w-full max-h-[calc(100vh-3.5rem)] overflow-x-auto"
-        >
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-extrabold tracking-tight">Users</h1>
+        <p className="mt-1 text-rx-muted">Manage staff and admin accounts</p>
+      </div>
+      <div className="overflow-hidden rounded-xl border border-rx-border bg-rx-card">
+        <div className="flex flex-wrap items-end justify-between gap-4 border-b border-rx-border p-4">
+          <div className="w-64">
+            <FloatingLabelInput label="Search" name="user_search" value={search} onChange={(e) => setSearch(e.target.value)} />
+          </div>
+          <button type="button" onClick={onAdd} className="rounded-lg bg-rx-accent px-4 py-2 text-sm font-bold uppercase text-white hover:bg-rx-accent-hover">
+            Add User
+          </button>
+        </div>
+        <div ref={tableRef} className="max-h-[calc(100vh-14rem)] overflow-auto">
           <Table>
-            <caption className="mb-4 text-left">
-              <div className="border-b border-gray-100">
-                <div className="p-4 flex justify-between">
-                  <div className="w-64 text-left">
-                    <FloatingLabelInput
-                      label="Search"
-                      type="text"
-                      name="search"
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                      autoFocus
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-lg transition cursor-pointer"
-                    onClick={onAddUser}
-                  >
-                    Add User
-                  </button>
-                </div>
-              </div>
-            </caption>
-            <TableHeader className="border-b border-gray-200 bg-blue-600 sticky top-0 text-white text-xs z-10">
+            <TableHeader className="sticky top-0 border-b border-rx-border bg-rx-surface text-xs uppercase text-rx-muted">
               <TableRow>
-                <TableCell
-                  isHeader
-                  className="px-5 py-3 font-medium text-center"
-                >
-                  No.
-                </TableCell>
-                <TableCell
-                  isHeader
-                  colSpan={2}
-                  className="px-5 py-3 font-medium text-center"
-                >
-                  Full Name
-                </TableCell>
-                <TableCell
-                  isHeader
-                  className="px-5 py-3 font-medium text-center"
-                >
-                  Gender
-                </TableCell>
-                <TableCell
-                  isHeader
-                  className="px-5 py-3 font-medium text-center"
-                >
-                  Birth Date
-                </TableCell>
-                <TableCell
-                  isHeader
-                  className="px-5 py-3 font-medium text-center"
-                >
-                  Age
-                </TableCell>
-                <TableCell
-                  isHeader
-                  className="px-5 py-3 font-medium text-center"
-                >
-                  Action
-                </TableCell>
+                <TableCell isHeader className="px-4 py-3">Name</TableCell>
+                <TableCell isHeader className="px-4 py-3">Username</TableCell>
+                <TableCell isHeader className="px-4 py-3">Role</TableCell>
+                <TableCell isHeader className="px-4 py-3 text-center">Actions</TableCell>
               </TableRow>
             </TableHeader>
-            <TableBody className="divide-y divide-gray-100 text-gray-500 text-sm">
-              {(users.length ?? 0 > 0) ? (
-                users.map((user, index) => (
-                  <TableRow className="hover:bg-gray-100" key={index}>
-                    <TableCell className="px-4 py-3 text-center">
-                      {index + 1}
-                    </TableCell>
-                    <TableCell className="py-3 itemes-end justify-end">
-                    {user.profile_picture ? (
-                      <img
-                        src={user.profile_picture}
-                        alt={handleUserFullNameFormat(user)}
-                        className="object-cover w-10 h-10 rounded-full"
-                      />
-                    ) : (
-                      <div className="relative inline-flex items-center justify-center w-10 h-10 text-center text-sm overflow-hidden bg-gray-300 rounded-full">
-                        <span className="font-medium text-gray-600">
-                          {`${user.last_name.charAt(0)}${user.first_name.charAt(0)}`}
-                        </span>
-                      </div>
-                    ) }
-                    </TableCell>
-                    <TableCell className="px-4 py-3 text-center">
-                      {handleUserFullNameFormat(user)}
-                    </TableCell>
-                    <TableCell className="px-4 py-3 text-center">
-                      {user.gender.gender}
-                    </TableCell>
-                    <TableCell className="px-4 py-3 text-center">
-                      {user.birth_date}
-                    </TableCell>
-                    <TableCell className="px-4 py-3 text-center">
-                      {user.age}
-                    </TableCell>
-                    <TableCell className="px-4 py-3 text-center">
-                      <div className="flex gap-4 justify-center">
-                        <button
-                          type="button"
-                          className="text-green-600 font-medium cursor-pointer hover:underline"
-                          onClick={() => onEditUser(user)}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          className="text-red-600 font-medium cursor-pointer hover:underline"
-                          onClick={() => onDeleteUser(user)}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : !loadingUsers && (users.length ?? 0) <= 0 ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={7}
-                    className="px-4 py-3 text-center font-medium"
-                  >
-                    No Records Found
+            <TableBody className="divide-y divide-rx-border text-sm">
+              {users.map((u) => (
+                <TableRow key={u.user_id} className="hover:bg-white/5">
+                  <TableCell className="px-4 py-3 font-medium">{u.name}</TableCell>
+                  <TableCell className="px-4 py-3 text-rx-muted">{u.username}</TableCell>
+                  <TableCell className="px-4 py-3 uppercase">{u.role}</TableCell>
+                  <TableCell className="px-4 py-3">
+                    <div className="flex justify-center gap-3">
+                      <button type="button" className="text-emerald-400 hover:underline" onClick={() => onEdit(u)}>Edit</button>
+                      <button type="button" className="text-rx-accent hover:underline" onClick={() => onDelete(u)}>Delete</button>
+                    </div>
                   </TableCell>
                 </TableRow>
-              ) : (
+              ))}
+              {!loading && users.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} className="px-4 py-3 text-center">
-                    <Spinner size="md" />
-                  </TableCell>
-                </TableRow>
-              )}
-              {loadingUsers && (users.length ?? 0) > 0 && (
-                <TableRow>
-                  <TableCell colSpan={7} className="px-4 py-3 text-center">
-                    <Spinner size="md" />
-                  </TableCell>
+                  <TableCell colSpan={4} className="py-8 text-center text-rx-muted">No users found</TableCell>
                 </TableRow>
               )}
             </TableBody>
           </Table>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

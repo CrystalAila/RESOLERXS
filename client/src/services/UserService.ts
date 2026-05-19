@@ -1,45 +1,16 @@
 import AxiosInstance from "./AxiosInstance";
 
 const UserService = {
-  loadusers: async (page: number, search: string) => {
-    try {
-      const response = await AxiosInstance.get(
-        search
-          ? `/user/loadUsers?page=${page}&search=${search}`
-          : `/user/loadUsers?page=${page}`,
-      );
-      return response;
-    } catch (error) {
-      throw error;
-    }
+  loadUsers: async (page: number, search: string) => {
+    const params = new URLSearchParams({ page: String(page) });
+    if (search) params.set("search", search);
+    return AxiosInstance.get(`/user/loadUsers?${params}`);
   },
-  storeUser: async (data: any) => {
-    try {
-      const response = await AxiosInstance.post("/user/storeUser", data);
-      return response;
-    } catch (error) {
-      throw error;
-    }
-  },
-  updateUser: async (userId: string | number, data: any) => {
-    try {
-      const response = await AxiosInstance.post(
-        `/user/updateUser/${userId}`,
-        data,
-      );
-      return response;
-    } catch (error) {
-      throw error;
-    }
-  },
-  destroyUser: async (userId: string | number) => {
-    try {
-      const response = await AxiosInstance.put(`/user/destroyUser/${userId}`);
-      return response;
-    } catch (error) {
-      throw error;
-    }
-  },
+  storeUser: async (data: object) => AxiosInstance.post("/user/storeUser", data),
+  updateUser: async (userId: number, data: object) =>
+    AxiosInstance.put(`/user/updateUser/${userId}`, data),
+  destroyUser: async (userId: number) =>
+    AxiosInstance.put(`/user/destroyUser/${userId}`),
 };
 
 export default UserService;

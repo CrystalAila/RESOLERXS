@@ -1,32 +1,23 @@
 import type { FC } from "react";
 
 interface CloseButtonProps {
-  label: string;
+  label?: string;
   onClose: () => void;
-  newClassName?: string;
   className?: string;
 }
 
 const CloseButton: FC<CloseButtonProps> = ({
-  label,
+  label = "Cancel",
   onClose,
-  newClassName,
-  className,
-}) => {
-  return (
-    <button
-      type="button"
-      className={`${
-        newClassName
-          ? newClassName
-          : `px-4 py-3 bg-white hover:bg-gray-100 text-gray-600 hover:text-gray-700 
-             text-sm font-medium cursor-pointer rounded-lg shadow-lg ${className}`
-      }`}
-      onClick={onClose}
-    >
-      {label}
-    </button>
-  );
-};
+  className = "",
+}) => (
+  <button
+    type="button"
+    className={`cursor-pointer rounded-lg border border-rx-border px-4 py-2.5 text-sm font-semibold uppercase tracking-wider text-rx-muted transition hover:bg-white/5 hover:text-white ${className}`}
+    onClick={onClose}
+  >
+    {label}
+  </button>
+);
 
 export default CloseButton;

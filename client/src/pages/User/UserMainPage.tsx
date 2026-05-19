@@ -2,74 +2,58 @@ import ToastMessage from "../../components/ToastMessage/ToastMessage";
 import { useModal } from "../../hooks/useModal";
 import { useRefresh } from "../../hooks/useRefresh";
 import { useToastMessage } from "../../hooks/useToastMessage";
-import AddUserFormModal from "./components/AddUserFormModel";
+import type { UserColumns } from "../../Interfaces/UserInterface";
+import AddUserFormModal from "./components/AddUserFormModal";
 import DeleteUserFormModal from "./components/DeleteUserFormModal";
 import EditUserFormModal from "./components/EditUserFormModal";
 import UserList from "./components/UserList";
 
 const UserMainPage = () => {
-  const {
-    isOpen: isAddUserFormModalOpen,
-    openModal: openAddUserFormModal,
-    closeModal: closeAddUserFormModal,
-  } = useModal(false);
-
-  const {
-    isOpen: isEditUserFormModalOpen,
-    selectedUser: selectedUserForEdit,
-    openModal: openEditUserFormModal,
-    closeModal: closeEditUserFormModal,
-  } = useModal(false);
-
-  const {
-    isOpen: isDeleteFormModalOpen,
-    selectedUser: selectedUserForDelete,
-    openModal: openDeleteUserFormModal,
-    closeModal: closeDeleteUserFormModal,
-  } = useModal(false);
-
-  const {
-    message: toastMessage,
-    isVisible: toastMessageIsVisible,
-    showToastMessage,
-    closeToastMessage,
-  } = useToastMessage("", false, false);
-
+  const toast = useToastMessage("", false, false);
   const { refresh, handleRefresh } = useRefresh(false);
+  const addModal = useModal(false);
+  const editModal = useModal<UserColumns>(false);
+  const deleteModal = useModal<UserColumns>(false);
 
   return (
     <>
       <ToastMessage
-        message={toastMessage}
-        isFailed={false}
-        isVisible={toastMessageIsVisible}
-        onClose={closeToastMessage}
+        message={toast.message}
+        isFailed={toast.isFailed}
+        isVisible={toast.isVisible}
+        onClose={toast.closeToastMessage}
       />
       <AddUserFormModal
-        onUserAdded={showToastMessage}
-        refreshKey={handleRefresh}
-        isOpen={isAddUserFormModalOpen}
-        onClose={closeAddUserFormModal}
+        isOpen={addModal.isOpen}
+        onClose={addModal.closeModal}
+        onSaved={(msg) => {
+          toast.showToastMessage(msg);
+          handleRefresh();
+        }}
       />
       <EditUserFormModal
-        user={selectedUserForEdit}
-        onUserUpdated={showToastMessage}
-        refreshKey={handleRefresh}
-        isOpen={isEditUserFormModalOpen}
-        onClose={closeEditUserFormModal}
+        user={editModal.selected}
+        isOpen={editModal.isOpen}
+        onClose={editModal.closeModal}
+        onSaved={(msg) => {
+          toast.showToastMessage(msg);
+          handleRefresh();
+        }}
       />
       <DeleteUserFormModal
-        user={selectedUserForDelete}
-        onUserDeleted={showToastMessage}
-        refreshKey={handleRefresh}
-        isOpen={isDeleteFormModalOpen}
-        onClose={closeDeleteUserFormModal}
+        user={deleteModal.selected}
+        isOpen={deleteModal.isOpen}
+        onClose={deleteModal.closeModal}
+        onDeleted={(msg) => {
+          toast.showToastMessage(msg);
+          handleRefresh();
+        }}
       />
       <UserList
-        onAddUser={openAddUserFormModal}
-        onEditUser={(user) => openEditUserFormModal(user)}
-        onDeleteUser={(user) => openDeleteUserFormModal(user)}
         refreshKey={refresh}
+        onAdd={() => addModal.openModal()}
+        onEdit={(u) => editModal.openModal(u)}
+        onDelete={(u) => deleteModal.openModal(u)}
       />
     </>
   );

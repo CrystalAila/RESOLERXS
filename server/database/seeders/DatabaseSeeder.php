@@ -2,50 +2,58 @@
 
 namespace Database\Seeders;
 
-use App\Models\Gender;
+use App\Models\Product;
+use App\Models\Sale;
+use App\Models\SaleItem;
 use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        // User::factory()->create([
-        //     'name' => 'Test User',
-        //     'email' => 'test@example.com',
-        // ]);
-
-        Gender::factory()->createMany([
-            ['gender' => 'Male'],
-            ['gender' => ' Female  '],
-            ['gender' => 'Prefer not to say'],
-
+        $admin = User::factory()->create([
+            'name' => 'RESOLERXS Admin',
+            'username' => 'resolerxs',
+            'password' => Hash::make('resolerxs'),
+            'role' => 'admin',
         ]);
-
-        $birthDate = fake()->date();
-        $age = date_diff(date_create($birthDate), date_create('now'))->y;
 
         User::factory()->create([
-            'first_name' => 'John',
-            'middle_name' => 'Santos',
-            'last_name' => 'Doe',
-            'suffix_name' => null,
-            'gender_id' => Gender::inRandomOrder()->first()->gender_id,
-            'birth_date' => $birthDate,
-            'age' => $age,
-            'username' => 'johndoe',
-            'password' => bcrypt('johndoe'),
+            'name' => 'Store Staff',
+            'username' => 'staff001',
+            'password' => Hash::make('staff001'),
+            'role' => 'staff',
         ]);
 
-        User::factory(100)->create();
+        $this->call(ProductSeeder::class);
 
+        $products = Product::where('is_deleted', false)->where('quantity', '>', 0)->take(3)->get();
+
+        foreach ($products as $product) {
+            $qty = min(1, $product->quantity);
+            $lineProfit = ((float) $product->selling_price - (float) $product->capital_price) * $qty;
+            $lineTotal = (float) $product->selling_price * $qty;
+
+            $sale = Sale::create([
+                'user_id' => $admin->user_id,
+                'sale_date' => now()->subDays(rand(0, 7)),
+                'total_amount' => $lineTotal,
+                'total_profit' => $lineProfit,
+                'notes' => 'Sample seeded sale',
+            ]);
+
+            SaleItem::create([
+                'sale_id' => $sale->sale_id,
+                'product_id' => $product->product_id,
+                'quantity' => $qty,
+                'unit_price' => $product->selling_price,
+                'unit_cost' => $product->capital_price,
+                'line_profit' => $lineProfit,
+            ]);
+
+            $product->decrement('quantity', $qty);
+        }
     }
 }

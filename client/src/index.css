@@ -1,1 +1,22 @@
-@import 'tailwindcss';
+@import "tailwindcss";
+
+@theme {
+  --color-rx-bg: #0a0a0a;
+  --color-rx-surface: #141414;
+  --color-rx-card: #1a1a1a;
+  --color-rx-border: #2a2a2a;
+  --color-rx-muted: #a3a3a3;
+  --color-rx-accent: #e63946;
+  --color-rx-accent-hover: #ff4d5a;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  html {
+    @apply bg-rx-bg text-white antialiased;
+  }
+
+  body {
+    @apply min-h-screen font-sans;
+  }
+}
