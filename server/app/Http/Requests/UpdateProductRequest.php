@@ -12,6 +12,13 @@ class UpdateProductRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('sku') && $this->input('sku') === '') {
+            $this->merge(['sku' => null]);
+        }
+    }
+
     public function rules(): array
     {
         $productId = $this->route('product')?->product_id;

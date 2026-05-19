@@ -2,6 +2,7 @@ import { useState, type FC, type FormEvent } from "react";
 import CloseButton from "../../../components/Button/CloseButton";
 import SubmitButton from "../../../components/Button/SubmitButton";
 import FloatingLabelInput from "../../../components/Input/FloatingLabelInput";
+import UploadInput from "../../../components/Input/UploadInput";
 import Modal from "../../../components/Modal";
 import type { ProductFieldErrors } from "../../../Interfaces/ProductInterface";
 import ProductService from "../../../services/ProductService";
@@ -15,6 +16,7 @@ interface Props {
 const AddProductModal: FC<Props> = ({ isOpen, onClose, onSaved }) => {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<ProductFieldErrors>({});
+  const [productImage, setProductImage] = useState<File | null>(null);
   const [form, setForm] = useState({
     name: "",
     brand: "",
@@ -37,15 +39,27 @@ const AddProductModal: FC<Props> = ({ isOpen, onClose, onSaved }) => {
       quantity: "",
       low_stock_threshold: "5",
     });
+    setProductImage(null);
     setErrors({});
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setErrors({});
     try {
       const fd = new FormData();
-      Object.entries(form).forEach(([k, v]) => fd.append(k, v));
+      fd.append("name", form.name.trim());
+      fd.append("brand", form.brand.trim());
+      fd.append("size", form.size.trim());
+      fd.append("sku", form.sku.trim());
+      fd.append("capital_price", form.capital_price);
+      fd.append("selling_price", form.selling_price);
+      fd.append("quantity", form.quantity);
+      fd.append("low_stock_threshold", form.low_stock_threshold);
+      if (productImage) {
+        fd.append("product_image", productImage);
+      }
       const res = await ProductService.storeProduct(fd);
       onSaved(res.data.message);
       reset();
@@ -65,6 +79,13 @@ const AddProductModal: FC<Props> = ({ isOpen, onClose, onSaved }) => {
     <Modal isOpen={isOpen} onClose={() => { reset(); onClose(); }}>
       <h2 className="mb-6 text-xl font-bold">Add Product</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
+        <UploadInput
+          label="Product Image"
+          name="product_image"
+          value={productImage}
+          onChange={setProductImage}
+          errors={errors.product_image}
+        />
         <FloatingLabelInput label="Name" name="name" value={form.name} onChange={set("name")} required errors={errors.name} />
         <div className="grid grid-cols-2 gap-4">
           <FloatingLabelInput label="Brand" name="brand" value={form.brand} onChange={set("brand")} required errors={errors.brand} />

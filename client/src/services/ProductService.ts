@@ -8,10 +8,14 @@ const ProductService = {
     return AxiosInstance.get(`/product/loadProducts?${params}`);
   },
   loadAllProducts: async () => AxiosInstance.get("/product/loadAllProducts"),
+  getProductImage: async (productId: number) =>
+    AxiosInstance.get(`/product/getProductImage/${productId}`, {
+      responseType: "blob",
+    }),
   storeProduct: async (data: FormData) =>
     AxiosInstance.post("/product/storeProduct", data),
   updateProduct: async (productId: number, data: FormData) =>
-    AxiosInstance.put(`/product/updateProduct/${productId}`, data),
+    AxiosInstance.post(`/product/updateProduct/${productId}`, data),
   destroyProduct: async (productId: number) =>
     AxiosInstance.put(`/product/destroyProduct/${productId}`),
 };

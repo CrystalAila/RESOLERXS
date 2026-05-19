@@ -7,7 +7,6 @@ use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -16,15 +15,8 @@ class DatabaseSeeder extends Seeder
         $admin = User::factory()->create([
             'name' => 'RESOLERXS Admin',
             'username' => 'resolerxs',
-            'password' => Hash::make('resolerxs'),
+            'password' => 'resolerxs',
             'role' => 'admin',
-        ]);
-
-        User::factory()->create([
-            'name' => 'Store Staff',
-            'username' => 'staff001',
-            'password' => Hash::make('staff001'),
-            'role' => 'staff',
         ]);
 
         $this->call(ProductSeeder::class);

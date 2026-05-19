@@ -1,23 +1,17 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useHeader } from "../contexts/HeaderContext";
+import { useLowStock } from "../contexts/LowStockContext";
 import { useSidebar } from "../contexts/SidebarContext";
-import ReportService from "../services/ReportService";
 
 const AppHeader = () => {
   const { isOpen, toggleUserMenu } = useHeader();
   const { toggleSidebar } = useSidebar();
   const { user, logout } = useAuth();
+  const { lowStockCount } = useLowStock();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
-  const [lowStockCount, setLowStockCount] = useState(0);
-
-  useEffect(() => {
-    ReportService.dashboard()
-      .then((res) => setLowStockCount(res.data.stats.low_stock_count))
-      .catch(() => setLowStockCount(0));
-  }, []);
 
   const handleLogout = async (e: FormEvent) => {
     e.preventDefault();

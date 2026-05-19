@@ -1,4 +1,5 @@
 import ToastMessage from "../../components/ToastMessage/ToastMessage";
+import { useLowStock } from "../../contexts/LowStockContext";
 import { useModal } from "../../hooks/useModal";
 import { useRefresh } from "../../hooks/useRefresh";
 import { useToastMessage } from "../../hooks/useToastMessage";
@@ -11,9 +12,16 @@ import ProductList from "./components/ProductList";
 const InventoryPage = () => {
   const toast = useToastMessage("", false, false);
   const { refresh, handleRefresh } = useRefresh(false);
+  const { refreshLowStock } = useLowStock();
   const addModal = useModal(false);
   const editModal = useModal<ProductColumns>(false);
   const deleteModal = useModal<ProductColumns>(false);
+
+  const afterChange = async (message: string) => {
+    toast.showToastMessage(message);
+    handleRefresh();
+    await refreshLowStock();
+  };
 
   return (
     <>
@@ -26,28 +34,19 @@ const InventoryPage = () => {
       <AddProductModal
         isOpen={addModal.isOpen}
         onClose={addModal.closeModal}
-        onSaved={(msg) => {
-          toast.showToastMessage(msg);
-          handleRefresh();
-        }}
+        onSaved={afterChange}
       />
       <EditProductModal
         product={editModal.selected}
         isOpen={editModal.isOpen}
         onClose={editModal.closeModal}
-        onSaved={(msg) => {
-          toast.showToastMessage(msg);
-          handleRefresh();
-        }}
+        onSaved={afterChange}
       />
       <DeleteProductModal
         product={deleteModal.selected}
         isOpen={deleteModal.isOpen}
         onClose={deleteModal.closeModal}
-        onDeleted={(msg) => {
-          toast.showToastMessage(msg);
-          handleRefresh();
-        }}
+        onDeleted={afterChange}
       />
       <ProductList
         refreshKey={refresh}

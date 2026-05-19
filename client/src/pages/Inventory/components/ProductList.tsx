@@ -8,6 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from "../../../components/Table";
+import ProductImage from "../../../components/ProductImage/ProductImage";
 import type { ProductColumns } from "../../../Interfaces/ProductInterface";
 import ProductService from "../../../services/ProductService";
 import { formatCurrency } from "../../../utils/format";
@@ -125,6 +126,7 @@ const ProductList: FC<ProductListProps> = ({
           <Table>
             <TableHeader className="sticky top-0 z-10 border-b border-rx-border bg-rx-surface text-xs uppercase tracking-wider text-rx-muted">
               <TableRow>
+                <TableCell isHeader className="px-4 py-3">Image</TableCell>
                 <TableCell isHeader className="px-4 py-3">Product</TableCell>
                 <TableCell isHeader className="px-4 py-3">Brand</TableCell>
                 <TableCell isHeader className="px-4 py-3 text-center">Size</TableCell>
@@ -138,6 +140,13 @@ const ProductList: FC<ProductListProps> = ({
               {products.length > 0 ? (
                 products.map((p) => (
                   <TableRow key={p.product_id} className="hover:bg-white/5">
+                    <TableCell className="px-4 py-3">
+                      <ProductImage
+                        productId={p.product_id}
+                        hasImage={p.has_image}
+                        alt={p.name}
+                      />
+                    </TableCell>
                     <TableCell className="px-4 py-3 font-medium text-white">
                       {p.name}
                       {p.is_low_stock && (
@@ -161,20 +170,20 @@ const ProductList: FC<ProductListProps> = ({
                 ))
               ) : !loading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="px-4 py-8 text-center text-rx-muted">
+                  <TableCell colSpan={8} className="px-4 py-8 text-center text-rx-muted">
                     No products found
                   </TableCell>
                 </TableRow>
               ) : (
                 <TableRow>
-                  <TableCell colSpan={7} className="py-8 text-center">
+                  <TableCell colSpan={8} className="py-8 text-center">
                     <Spinner size="md" />
                   </TableCell>
                 </TableRow>
               )}
               {loading && products.length > 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} className="py-4 text-center">
+                  <TableCell colSpan={8} className="py-4 text-center">
                     <Spinner size="md" />
                   </TableCell>
                 </TableRow>

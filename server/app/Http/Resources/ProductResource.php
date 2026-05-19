@@ -7,13 +7,9 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class ProductResource extends JsonResource
 {
-    public static function imageUrl(?string $filename): ?string
+    public static function hasImage(?string $filename): bool
     {
-        if (! $filename) {
-            return null;
-        }
-
-        return url('storage/public/img/products/' . $filename);
+        return ! empty($filename);
     }
 
     /**
@@ -31,7 +27,8 @@ class ProductResource extends JsonResource
             'selling_price' => $this->selling_price,
             'quantity' => $this->quantity,
             'low_stock_threshold' => $this->low_stock_threshold,
-            'image' => self::imageUrl($this->image),
+            'has_image' => self::hasImage($this->image),
+            'image' => $this->image,
             'is_low_stock' => $this->isLowStock(),
             'profit_margin' => $this->profit_margin,
             'is_deleted' => $this->is_deleted,

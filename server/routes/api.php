@@ -37,8 +37,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::controller(ProductController::class)->prefix('/product')->group(function () {
         Route::get('/loadProducts', 'loadProducts');
         Route::get('/loadAllProducts', 'loadAllProducts');
+        Route::get('/getProductImage/{product}', 'getProductImage');
         Route::post('/storeProduct', 'storeProduct');
-        Route::put('/updateProduct/{product}', 'updateProduct');
+        Route::post('/updateProduct/{product}', 'updateProduct');
         Route::put('/destroyProduct/{product}', 'destroyProduct');
     });
 

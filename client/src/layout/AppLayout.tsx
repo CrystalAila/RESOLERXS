@@ -3,6 +3,7 @@ import AppSidebar from "./AppSidebar";
 import AppHeader from "./AppHeader";
 import { SidebarProvider } from "../contexts/SidebarContext";
 import { HeaderProvider } from "../contexts/HeaderContext";
+import { LowStockProvider } from "../contexts/LowStockContext";
 
 const LayoutContent = () => (
   <div className="min-h-screen bg-rx-bg">
@@ -19,7 +20,9 @@ const LayoutContent = () => (
 const AppLayout = () => (
   <HeaderProvider>
     <SidebarProvider>
-      <LayoutContent />
+      <LowStockProvider>
+        <LayoutContent />
+      </LowStockProvider>
     </SidebarProvider>
   </HeaderProvider>
 );

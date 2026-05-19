@@ -2,6 +2,7 @@ import { useEffect, useState, type FC, type FormEvent } from "react";
 import CloseButton from "../../../components/Button/CloseButton";
 import SubmitButton from "../../../components/Button/SubmitButton";
 import FloatingLabelInput from "../../../components/Input/FloatingLabelInput";
+import UploadInput from "../../../components/Input/UploadInput";
 import Modal from "../../../components/Modal";
 import type { ProductColumns, ProductFieldErrors } from "../../../Interfaces/ProductInterface";
 import ProductService from "../../../services/ProductService";
@@ -16,6 +17,7 @@ interface Props {
 const EditProductModal: FC<Props> = ({ product, isOpen, onClose, onSaved }) => {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<ProductFieldErrors>({});
+  const [productImage, setProductImage] = useState<File | null>(null);
   const [form, setForm] = useState({
     name: "",
     brand: "",
@@ -28,7 +30,7 @@ const EditProductModal: FC<Props> = ({ product, isOpen, onClose, onSaved }) => {
   });
 
   useEffect(() => {
-    if (product) {
+    if (product && isOpen) {
       setForm({
         name: product.name,
         brand: product.brand,
@@ -39,17 +41,29 @@ const EditProductModal: FC<Props> = ({ product, isOpen, onClose, onSaved }) => {
         quantity: String(product.quantity),
         low_stock_threshold: String(product.low_stock_threshold),
       });
+      setProductImage(null);
       setErrors({});
     }
-  }, [product]);
+  }, [product, isOpen]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!product) return;
     setLoading(true);
+    setErrors({});
     try {
       const fd = new FormData();
-      Object.entries(form).forEach(([k, v]) => fd.append(k, v));
+      fd.append("name", form.name.trim());
+      fd.append("brand", form.brand.trim());
+      fd.append("size", form.size.trim());
+      fd.append("sku", form.sku.trim());
+      fd.append("capital_price", form.capital_price);
+      fd.append("selling_price", form.selling_price);
+      fd.append("quantity", form.quantity);
+      fd.append("low_stock_threshold", form.low_stock_threshold);
+      if (productImage) {
+        fd.append("product_image", productImage);
+      }
       const res = await ProductService.updateProduct(product.product_id, fd);
       onSaved(res.data.message);
       onClose();
@@ -68,6 +82,15 @@ const EditProductModal: FC<Props> = ({ product, isOpen, onClose, onSaved }) => {
     <Modal isOpen={isOpen} onClose={onClose}>
       <h2 className="mb-6 text-xl font-bold">Edit Product</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
+        <UploadInput
+          label="Product Image"
+          name="edit_product_image"
+          value={productImage}
+          onChange={setProductImage}
+          existingHasImage={!!product?.has_image}
+          existingImageProductId={product?.product_id}
+          errors={errors.product_image}
+        />
         <FloatingLabelInput label="Name" name="edit_name" value={form.name} onChange={set("name")} required errors={errors.name} />
         <div className="grid grid-cols-2 gap-4">
           <FloatingLabelInput label="Brand" name="edit_brand" value={form.brand} onChange={set("brand")} required errors={errors.brand} />

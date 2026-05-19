@@ -41,7 +41,7 @@ const FloatingLabelInput: FC<FloatingLabelInputProps> = ({
         step={step}
         className="peer block w-full rounded-lg border border-rx-border bg-rx-card px-3 pt-5 pb-2 text-sm text-white placeholder-transparent focus:border-rx-accent focus:outline-none focus:ring-1 focus:ring-rx-accent disabled:opacity-50"
         placeholder=" "
-        required={required}
+
         autoFocus={autoFocus}
         disabled={disabled}
         readOnly={readOnly}

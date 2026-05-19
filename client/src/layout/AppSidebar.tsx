@@ -6,7 +6,6 @@ const navItems = [
   { path: "/inventory", label: "Inventory" },
   { path: "/sales", label: "Sales" },
   { path: "/reports", label: "Reports" },
-  { path: "/users", label: "Users" },
 ];
 
 const AppSidebar = () => {

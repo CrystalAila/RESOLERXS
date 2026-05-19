@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import ToastMessage from "../../components/ToastMessage/ToastMessage";
 import { Spinner } from "../../components/Spinner/Spinner";
+import { useLowStock } from "../../contexts/LowStockContext";
 import { useToastMessage } from "../../hooks/useToastMessage";
 import type { CartItem, SaleColumns } from "../../Interfaces/SaleInterface";
 import type { ProductColumns } from "../../Interfaces/ProductInterface";
@@ -10,6 +11,7 @@ import { formatCurrency, formatDate } from "../../utils/format";
 
 const SalesPage = () => {
   const toast = useToastMessage("", false, false);
+  const { refreshLowStock } = useLowStock();
   const [products, setProducts] = useState<ProductColumns[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [notes, setNotes] = useState("");
@@ -111,6 +113,7 @@ const SalesPage = () => {
       setNotes("");
       loadProducts();
       loadSales();
+      await refreshLowStock();
     } catch (err: unknown) {
       const ax = err as { response?: { data?: { message?: string; errors?: { items?: string[] } } } };
       const msg =

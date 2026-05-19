@@ -9,6 +9,7 @@ export interface ProductColumns {
   quantity: number;
   low_stock_threshold: number;
   image?: string | null;
+  has_image?: boolean;
   is_low_stock?: boolean;
   is_deleted?: boolean;
 }

@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 
 class UserController extends Controller
@@ -44,13 +43,13 @@ class UserController extends Controller
         User::create([
             'name' => $validated['name'],
             'username' => $validated['username'],
-            'password' => Hash::make($validated['password']),
+            'password' => $validated['password'],
             'role' => $validated['role'],
             'is_deleted' => false,
         ]);
 
         return response()->json([
-            'message' => 'User successfully saved.',
+            'message' => 'User Successfully Saved.',
         ], 200);
     }
 
@@ -71,13 +70,13 @@ class UserController extends Controller
         ];
 
         if (! empty($validated['password'])) {
-            $data['password'] = Hash::make($validated['password']);
+            $data['password'] = $validated['password'];
         }
 
         $user->update($data);
 
         return response()->json([
-            'message' => 'User successfully updated.',
+            'message' => 'User Successfully Updated.',
             'user' => $user,
         ], 200);
     }
@@ -87,7 +86,7 @@ class UserController extends Controller
         $user->update(['is_deleted' => true]);
 
         return response()->json([
-            'message' => 'User successfully deleted.',
+            'message' => 'User Successfully Deleted.',
         ], 200);
     }
 }

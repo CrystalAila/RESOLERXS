@@ -5,7 +5,6 @@ import DashboardPage from "../pages/Dashboard/DashboardPage";
 import InventoryPage from "../pages/Inventory/InventoryPage";
 import SalesPage from "../pages/Sales/SalesPage";
 import ReportsPage from "../pages/Reports/ReportsPage";
-import UsersPage from "../pages/User/UserMainPage";
 import { AuthProvider } from "../contexts/AuthContext";
 import ProtectedRoute from "./ProtectedRoute";
 
@@ -24,7 +23,6 @@ const AppRoutes = () => (
         <Route path="/inventory" element={<InventoryPage />} />
         <Route path="/sales" element={<SalesPage />} />
         <Route path="/reports" element={<ReportsPage />} />
-        <Route path="/users" element={<UsersPage />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Route>
     </Routes>

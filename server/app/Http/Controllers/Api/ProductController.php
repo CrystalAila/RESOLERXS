@@ -9,9 +9,14 @@ use App\Http\Resources\ProductResource;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\Response;
 
 class ProductController extends Controller
 {
+    private const IMAGE_DISK = 'local';
+
+    private const IMAGE_PATH = 'products';
+
     public function loadProducts(Request $request)
     {
         $search = $request->input('search');
@@ -53,6 +58,15 @@ class ProductController extends Controller
         return response()->json([
             'products' => ProductResource::collection($products)->resolve(),
         ], 200);
+    }
+
+    public function getProductImage(Product $product)
+    {
+        if (! $product->image || ! Storage::disk(self::IMAGE_DISK)->exists(self::IMAGE_PATH . '/' . $product->image)) {
+            return response()->json(['message' => 'Image not found.'], Response::HTTP_NOT_FOUND);
+        }
+
+        return Storage::disk(self::IMAGE_DISK)->response(self::IMAGE_PATH . '/' . $product->image);
     }
 
     public function storeProduct(StoreProductRequest $request)
@@ -110,6 +124,8 @@ class ProductController extends Controller
 
     public function destroyProduct(Product $product)
     {
+        $this->deleteImage($product->image);
+
         $product->update([
             'is_deleted' => true,
         ]);
@@ -129,16 +145,17 @@ class ProductController extends Controller
         $filenameWithExtension = $file->getClientOriginalName();
         $filename = pathinfo($filenameWithExtension, PATHINFO_FILENAME);
         $extension = $file->getClientOriginalExtension();
-        $filenameToStore = sha1($filename . '_' . time()) . '.' . $extension;
-        $file->storeAs('public/img/products', $filenameToStore);
+        $filenameToStore = sha1($filename . '_' . microtime(true)) . '.' . $extension;
+
+        $file->storeAs(self::IMAGE_PATH, $filenameToStore, self::IMAGE_DISK);
 
         return $filenameToStore;
     }
 
     private function deleteImage(?string $filename): void
     {
-        if ($filename && Storage::exists('public/img/products/' . $filename)) {
-            Storage::delete('public/img/products/' . $filename);
+        if ($filename && Storage::disk(self::IMAGE_DISK)->exists(self::IMAGE_PATH . '/' . $filename)) {
+            Storage::disk(self::IMAGE_DISK)->delete(self::IMAGE_PATH . '/' . $filename);
         }
     }
 }
