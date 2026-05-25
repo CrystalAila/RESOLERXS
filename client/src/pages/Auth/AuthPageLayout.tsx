@@ -1,4 +1,5 @@
 import type { FC, ReactNode } from "react";
+import BrandTitle from "../../components/BrandTitle/BrandTitle";
 
 interface AuthPageLayoutProps {
   children: ReactNode;
@@ -11,9 +12,7 @@ const AuthPageLayout: FC<AuthPageLayoutProps> = ({ children }) => (
         <p className="mb-2 text-xs font-semibold uppercase tracking-[0.35em] text-rx-muted">
           Shoe Store Management
         </p>
-        <h1 className="mb-2 text-4xl font-extrabold tracking-tight">
-          RESOLER<span className="text-rx-accent">XS</span>
-        </h1>
+        <BrandTitle className="mb-2 text-4xl font-extrabold tracking-tight text-white" />
         <p className="mb-8 text-rx-muted">Inventory & Sales System</p>
         {children}
       </div>

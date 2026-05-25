@@ -27,7 +27,7 @@ class SaleController extends Controller
             });
         }
 
-        $sales = $sales->paginate(15);
+        $sales = $sales->paginate(10);
 
         return response()->json([
             'sales' => SaleResource::collection($sales)->response()->getData(true),

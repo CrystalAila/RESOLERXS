@@ -3,6 +3,7 @@ import FloatingLabelInput from "../../../components/Input/FloatingLabelInput";
 import { Table, TableBody, TableCell, TableHeader, TableRow } from "../../../components/Table";
 import type { UserColumns } from "../../../Interfaces/UserInterface";
 import UserService from "../../../services/UserService";
+import { parsePaginatedResponse } from "../../../utils/pagination";
 
 interface UserListProps {
   refreshKey: boolean;
@@ -24,11 +25,10 @@ const UserList: FC<UserListProps> = ({ refreshKey, onAdd, onEdit, onDelete }) =>
     try {
       setLoading(true);
       const res = await UserService.loadUsers(p, q);
-      const data = res.data.users.data ?? [];
-      const lp = res.data.users.last_page ?? 1;
+      const { data, currentPage, lastPage: lp } = parsePaginatedResponse<UserColumns>(res.data.users);
       setUsers(append ? [...users, ...data] : data);
-      setPage(p);
-      setHasMore(p < lp);
+      setPage(currentPage);
+      setHasMore(currentPage < lp);
     } catch {
       if (!append) setUsers([]);
       setHasMore(false);

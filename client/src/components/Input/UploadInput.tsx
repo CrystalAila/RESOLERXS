@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState, type FC } from "react";
+import { useCallback, useEffect, useRef, useState, type FC } from "react";
 import { useDropzone } from "react-dropzone";
 import RemoveButton from "../Button/RemoveButton";
+import ProductService from "../../services/ProductService";
 
 interface UploadInputProps {
   label: string;
@@ -24,12 +25,18 @@ const UploadInput: FC<UploadInputProps> = ({
   errors,
 }) => {
   const [preview, setPreview] = useState<string | null>(null);
+  const [existingPreview, setExistingPreview] = useState<string | null>(null);
+  const [existingLoading, setExistingLoading] = useState(false);
+  const objectUrlRef = useRef<string | null>(null);
+
+  const revokePreview = (url: string | null) => {
+    if (url) URL.revokeObjectURL(url);
+  };
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
       if (acceptedFiles?.length > 0) {
         const file = acceptedFiles[0];
-        setPreview(URL.createObjectURL(file));
         onChange?.(file);
       }
     },
@@ -47,12 +54,86 @@ const UploadInput: FC<UploadInputProps> = ({
   });
 
   useEffect(() => {
-    if (value) {
-      setPreview(URL.createObjectURL(value));
-      return () => URL.revokeObjectURL(preview ?? "");
+    if (!existingHasImage || !existingImageProductId) {
+      setExistingPreview((prev) => {
+        revokePreview(prev);
+        return null;
+      });
+      return;
     }
+
+    let cancelled = false;
+    setExistingLoading(true);
+
+    ProductService.getProductImage(existingImageProductId)
+      .then((res) => {
+        if (cancelled) return;
+        const url = URL.createObjectURL(res.data);
+        setExistingPreview((prev) => {
+          revokePreview(prev);
+          return url;
+        });
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setExistingPreview((prev) => {
+            revokePreview(prev);
+            return null;
+          });
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setExistingLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [existingHasImage, existingImageProductId]);
+
+  useEffect(() => {
+    revokePreview(objectUrlRef.current);
+    objectUrlRef.current = null;
+
+    if (value) {
+      const url = URL.createObjectURL(value);
+      objectUrlRef.current = url;
+      setPreview(url);
+      return () => {
+        revokePreview(url);
+        objectUrlRef.current = null;
+      };
+    }
+
     setPreview(null);
   }, [value]);
+
+  useEffect(() => {
+    return () => {
+      revokePreview(objectUrlRef.current);
+      setExistingPreview((prev) => {
+        revokePreview(prev);
+        return null;
+      });
+    };
+  }, []);
+
+  const displayPreview = preview ?? existingPreview;
+  const showRemove = Boolean(preview || existingHasImage);
+
+  const handleRemove = () => {
+    onChange?.(null);
+    if (existingHasImage) {
+      onRemoveExistingImage?.();
+    }
+    revokePreview(objectUrlRef.current);
+    objectUrlRef.current = null;
+    setPreview(null);
+    setExistingPreview((prev) => {
+      revokePreview(prev);
+      return null;
+    });
+  };
 
   return (
     <div>
@@ -72,16 +153,14 @@ const UploadInput: FC<UploadInputProps> = ({
         >
           <input {...getInputProps()} name={name} id={name} />
           <div className="flex flex-col items-center gap-2 text-center">
-            {preview ? (
+            {displayPreview ? (
               <img
-                src={preview}
+                src={displayPreview}
                 alt="Product preview"
                 className="h-32 w-32 rounded-lg object-cover"
               />
-            ) : existingHasImage && existingImageProductId ? (
-              <p className="text-sm text-rx-muted">
-                Current image on file — drop a new image to replace
-              </p>
+            ) : existingLoading ? (
+              <p className="text-sm text-rx-muted">Loading image...</p>
             ) : (
               <>
                 <p className="text-sm font-semibold text-white">
@@ -99,16 +178,12 @@ const UploadInput: FC<UploadInputProps> = ({
       {errors && errors.length > 0 && (
         <p className="mt-1 text-xs text-rx-accent">{errors[0]}</p>
       )}
-      {(preview || existingHasImage) && (
+      {showRemove && (
         <div className="mt-2">
           <RemoveButton
             label="Remove Image"
             className="w-full"
-            onRemove={() => {
-              onChange?.(null);
-              onRemoveExistingImage?.();
-              setPreview(null);
-            }}
+            onRemove={handleRemove}
           />
         </div>
       )}

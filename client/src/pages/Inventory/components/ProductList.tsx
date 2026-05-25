@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useRef, useState, type FC } from "react";
+import { useEffect, useState, type FC } from "react";
 import FloatingLabelInput from "../../../components/Input/FloatingLabelInput";
+import Pagination from "../../../components/Pagination/Pagination";
 import { Spinner } from "../../../components/Spinner/Spinner";
 import {
   Table,
@@ -12,6 +13,9 @@ import ProductImage from "../../../components/ProductImage/ProductImage";
 import type { ProductColumns } from "../../../Interfaces/ProductInterface";
 import ProductService from "../../../services/ProductService";
 import { formatCurrency } from "../../../utils/format";
+import { parsePaginatedResponse } from "../../../utils/pagination";
+
+const PER_PAGE = 15;
 
 interface ProductListProps {
   refreshKey: boolean;
@@ -26,51 +30,40 @@ const ProductList: FC<ProductListProps> = ({
   onEdit,
   onDelete,
 }) => {
-  const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [pageLoading, setPageLoading] = useState(false);
   const [products, setProducts] = useState<ProductColumns[]>([]);
   const [page, setPage] = useState(1);
-  const [, setLastPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
+  const [lastPage, setLastPage] = useState(1);
+  const [total, setTotal] = useState(0);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [lowStockOnly, setLowStockOnly] = useState(false);
-  const tableRef = useRef<HTMLDivElement>(null);
 
-  const load = async (p: number, append: boolean, q: string, low: boolean) => {
+  const load = async (p: number, q: string, low: boolean, isInitial: boolean) => {
     try {
-      setLoading(true);
+      if (isInitial) {
+        setInitialLoading(true);
+      } else {
+        setPageLoading(true);
+      }
       const res = await ProductService.loadProducts(p, q, low);
-      const data = res.data.products.data ?? [];
-      const lp = res.data.products.last_page ?? 1;
-      setProducts(append ? [...products, ...data] : data);
-      setPage(p);
+      const { data, currentPage, lastPage: lp, total: t } = parsePaginatedResponse<ProductColumns>(
+        res.data.products,
+      );
+      setProducts(data);
+      setPage(currentPage);
       setLastPage(lp);
-      setHasMore(p < lp);
+      setTotal(t);
     } catch {
-      if (!append) setProducts([]);
-      setHasMore(false);
+      setProducts([]);
+      setLastPage(1);
+      setTotal(0);
     } finally {
-      setLoading(false);
+      setInitialLoading(false);
+      setPageLoading(false);
     }
   };
-
-  const handleScroll = useCallback(() => {
-    const ref = tableRef.current;
-    if (
-      ref &&
-      ref.scrollTop + ref.clientHeight >= ref.scrollHeight - 10 &&
-      hasMore &&
-      !loading
-    ) {
-      load(page + 1, true, debouncedSearch, lowStockOnly);
-    }
-  }, [hasMore, loading, page, debouncedSearch, lowStockOnly, products]);
-
-  useEffect(() => {
-    const ref = tableRef.current;
-    ref?.addEventListener("scroll", handleScroll);
-    return () => ref?.removeEventListener("scroll", handleScroll);
-  }, [handleScroll]);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 500);
@@ -78,11 +71,13 @@ const ProductList: FC<ProductListProps> = ({
   }, [search]);
 
   useEffect(() => {
-    setProducts([]);
     setPage(1);
-    setHasMore(true);
-    load(1, false, debouncedSearch, lowStockOnly);
+    load(1, debouncedSearch, lowStockOnly, true);
   }, [refreshKey, debouncedSearch, lowStockOnly]);
+
+  const handlePageChange = (nextPage: number) => {
+    load(nextPage, debouncedSearch, lowStockOnly, false);
+  };
 
   return (
     <div className="space-y-6">
@@ -90,7 +85,7 @@ const ProductList: FC<ProductListProps> = ({
         <h1 className="text-3xl font-extrabold tracking-tight">Inventory</h1>
         <p className="mt-1 text-rx-muted">Manage shoe products and stock levels</p>
       </div>
-      <div className="overflow-hidden rounded-xl border border-rx-border bg-rx-card">
+      <div className="flex flex-col overflow-hidden rounded-xl border border-rx-border bg-rx-card">
         <div className="border-b border-rx-border p-4">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div className="w-64">
@@ -119,16 +114,13 @@ const ProductList: FC<ProductListProps> = ({
             </button>
           </div>
         </div>
-        <div
-          ref={tableRef}
-          className="max-h-[calc(100vh-14rem)] overflow-auto"
-        >
+        <div className={`min-h-0 flex-1 overflow-auto ${pageLoading ? "opacity-60" : ""}`}>
           <Table>
             <TableHeader className="sticky top-0 z-10 border-b border-rx-border bg-rx-surface text-xs uppercase tracking-wider text-rx-muted">
               <TableRow>
-                <TableCell isHeader className="px-4 py-3">Image</TableCell>
-                <TableCell isHeader className="px-4 py-3">Product</TableCell>
-                <TableCell isHeader className="px-4 py-3">Brand</TableCell>
+                <TableCell isHeader className="px-4 py-3 text-center">Image</TableCell>
+                <TableCell isHeader className="px-4 py-3 text-center">Product</TableCell>
+                <TableCell isHeader className="px-4 py-3 text-center">Brand</TableCell>
                 <TableCell isHeader className="px-4 py-3 text-center">Size</TableCell>
                 <TableCell isHeader className="px-4 py-3 text-right">Capital</TableCell>
                 <TableCell isHeader className="px-4 py-3 text-right">Price</TableCell>
@@ -137,23 +129,33 @@ const ProductList: FC<ProductListProps> = ({
               </TableRow>
             </TableHeader>
             <TableBody className="divide-y divide-rx-border text-sm">
-              {products.length > 0 ? (
+              {initialLoading ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="py-8 text-center">
+                    <Spinner size="md" />
+                  </TableCell>
+                </TableRow>
+              ) : products.length > 0 ? (
                 products.map((p) => (
                   <TableRow key={p.product_id} className="hover:bg-white/5">
                     <TableCell className="px-4 py-3">
-                      <ProductImage
-                        productId={p.product_id}
-                        hasImage={p.has_image}
-                        alt={p.name}
-                      />
+                      <div className="flex justify-center">
+                        <ProductImage
+                          productId={p.product_id}
+                          hasImage={p.has_image}
+                          alt={p.name}
+                        />
+                      </div>
                     </TableCell>
-                    <TableCell className="px-4 py-3 font-medium text-white">
-                      {p.name}
-                      {p.is_low_stock && (
-                        <span className="ml-2 text-xs text-rx-accent">LOW</span>
-                      )}
+                    <TableCell className="px-4 py-3 text-center font-medium text-white">
+                      <span className="inline-flex flex-wrap items-center justify-center gap-2">
+                        {p.name}
+                        {p.is_low_stock && (
+                          <span className="text-xs text-rx-accent">LOW</span>
+                        )}
+                      </span>
                     </TableCell>
-                    <TableCell className="px-4 py-3 text-rx-muted">{p.brand}</TableCell>
+                    <TableCell className="px-4 py-3 text-center text-rx-muted">{p.brand}</TableCell>
                     <TableCell className="px-4 py-3 text-center">{p.size}</TableCell>
                     <TableCell className="px-4 py-3 text-right">{formatCurrency(Number(p.capital_price))}</TableCell>
                     <TableCell className="px-4 py-3 text-right">{formatCurrency(Number(p.selling_price))}</TableCell>
@@ -168,29 +170,27 @@ const ProductList: FC<ProductListProps> = ({
                     </TableCell>
                   </TableRow>
                 ))
-              ) : !loading ? (
+              ) : (
                 <TableRow>
                   <TableCell colSpan={8} className="px-4 py-8 text-center text-rx-muted">
                     No products found
-                  </TableCell>
-                </TableRow>
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={8} className="py-8 text-center">
-                    <Spinner size="md" />
-                  </TableCell>
-                </TableRow>
-              )}
-              {loading && products.length > 0 && (
-                <TableRow>
-                  <TableCell colSpan={8} className="py-4 text-center">
-                    <Spinner size="md" />
                   </TableCell>
                 </TableRow>
               )}
             </TableBody>
           </Table>
         </div>
+        {!initialLoading && (
+          <Pagination
+            page={page}
+            lastPage={lastPage}
+            total={total}
+            perPage={PER_PAGE}
+            alwaysShow
+            onPageChange={handlePageChange}
+            loading={pageLoading}
+          />
+        )}
       </div>
     </div>
   );

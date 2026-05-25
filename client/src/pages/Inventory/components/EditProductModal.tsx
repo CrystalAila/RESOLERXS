@@ -18,6 +18,7 @@ const EditProductModal: FC<Props> = ({ product, isOpen, onClose, onSaved }) => {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<ProductFieldErrors>({});
   const [productImage, setProductImage] = useState<File | null>(null);
+  const [removeImage, setRemoveImage] = useState(false);
   const [form, setForm] = useState({
     name: "",
     brand: "",
@@ -42,6 +43,7 @@ const EditProductModal: FC<Props> = ({ product, isOpen, onClose, onSaved }) => {
         low_stock_threshold: String(product.low_stock_threshold),
       });
       setProductImage(null);
+      setRemoveImage(false);
       setErrors({});
     }
   }, [product, isOpen]);
@@ -61,6 +63,9 @@ const EditProductModal: FC<Props> = ({ product, isOpen, onClose, onSaved }) => {
       fd.append("selling_price", form.selling_price);
       fd.append("quantity", form.quantity);
       fd.append("low_stock_threshold", form.low_stock_threshold);
+      if (removeImage) {
+        fd.append("remove_image", "1");
+      }
       if (productImage) {
         fd.append("product_image", productImage);
       }
@@ -87,7 +92,8 @@ const EditProductModal: FC<Props> = ({ product, isOpen, onClose, onSaved }) => {
           name="edit_product_image"
           value={productImage}
           onChange={setProductImage}
-          existingHasImage={!!product?.has_image}
+          onRemoveExistingImage={() => setRemoveImage(true)}
+          existingHasImage={!!product?.has_image && !removeImage}
           existingImageProductId={product?.product_id}
           errors={errors.product_image}
         />

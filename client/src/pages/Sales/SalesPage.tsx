@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import ToastMessage from "../../components/ToastMessage/ToastMessage";
+import Pagination from "../../components/Pagination/Pagination";
 import { Spinner } from "../../components/Spinner/Spinner";
 import { useLowStock } from "../../contexts/LowStockContext";
 import { useToastMessage } from "../../hooks/useToastMessage";
@@ -8,6 +9,8 @@ import type { ProductColumns } from "../../Interfaces/ProductInterface";
 import ProductService from "../../services/ProductService";
 import SaleService from "../../services/SaleService";
 import { formatCurrency, formatDate } from "../../utils/format";
+import { parsePaginatedResponse } from "../../utils/pagination";
+import AllSalesModal from "./components/AllSalesModal";
 
 const SalesPage = () => {
   const toast = useToastMessage("", false, false);
@@ -18,7 +21,11 @@ const SalesPage = () => {
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [sales, setSales] = useState<SaleColumns[]>([]);
+  const [salesPage, setSalesPage] = useState(1);
+  const [salesLastPage, setSalesLastPage] = useState(1);
+  const [salesLoading, setSalesLoading] = useState(false);
   const [productSearch, setProductSearch] = useState("");
+  const [allSalesOpen, setAllSalesOpen] = useState(false);
 
   const loadProducts = () => {
     setLoadingProducts(true);
@@ -27,16 +34,26 @@ const SalesPage = () => {
       .finally(() => setLoadingProducts(false));
   };
 
-  const loadSales = () => {
-    SaleService.loadSales(1).then((res) => {
-      setSales(res.data.sales.data ?? []);
-    });
+  const loadSales = (page: number) => {
+    setSalesLoading(true);
+    SaleService.loadSales(page)
+      .then((res) => {
+        const { data, currentPage, lastPage } = parsePaginatedResponse<SaleColumns>(res.data.sales);
+        setSales(data);
+        setSalesPage(currentPage);
+        setSalesLastPage(lastPage);
+      })
+      .catch(() => {
+        setSales([]);
+        setSalesLastPage(1);
+      })
+      .finally(() => setSalesLoading(false));
   };
 
   useEffect(() => {
     document.title = "Sales | RESOLERXS";
     loadProducts();
-    loadSales();
+    loadSales(1);
   }, []);
 
   const filtered = products.filter((p) => {
@@ -112,7 +129,7 @@ const SalesPage = () => {
       setCart([]);
       setNotes("");
       loadProducts();
-      loadSales();
+      loadSales(salesPage);
       await refreshLowStock();
     } catch (err: unknown) {
       const ax = err as { response?: { data?: { message?: string; errors?: { items?: string[] } } } };
@@ -134,6 +151,7 @@ const SalesPage = () => {
         isVisible={toast.isVisible}
         onClose={toast.closeToastMessage}
       />
+      <AllSalesModal isOpen={allSalesOpen} onClose={() => setAllSalesOpen(false)} />
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight">Sales</h1>
@@ -249,29 +267,50 @@ const SalesPage = () => {
           </div>
         </div>
 
-        <div className="rounded-xl border border-rx-border bg-rx-card p-4">
-          <h2 className="mb-4 text-sm font-bold uppercase tracking-wider text-rx-muted">
-            Recent Sales
-          </h2>
-          <ul className="space-y-3">
-            {sales.map((sale) => (
-              <li
-                key={sale.sale_id}
-                className="flex flex-wrap items-center justify-between gap-2 border-b border-rx-border pb-3 last:border-0"
-              >
-                <div>
-                  <p className="font-semibold">{formatCurrency(Number(sale.total_amount))}</p>
-                  <p className="text-xs text-rx-muted">
-                    {formatDate(sale.sale_date)} · {sale.user?.name}
-                    {sale.items?.length ? ` · ${sale.items.length} item(s)` : ""}
-                  </p>
-                </div>
-                <span className="text-sm font-medium text-emerald-400">
-                  +{formatCurrency(Number(sale.total_profit))}
-                </span>
-              </li>
-            ))}
-          </ul>
+        <div className="overflow-hidden rounded-xl border border-rx-border bg-rx-card">
+          <div className="flex flex-wrap items-center justify-between gap-3 p-4">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-rx-muted">
+              Recent Sales
+            </h2>
+            <button
+              type="button"
+              onClick={() => setAllSalesOpen(true)}
+              className="rounded-lg border border-rx-border px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-rx-accent transition hover:bg-rx-accent/10"
+            >
+              View All Sales
+            </button>
+          </div>
+          <div className={`p-4 pt-0 ${salesLoading ? "opacity-60" : ""}`}>
+            {sales.length === 0 && !salesLoading ? (
+              <p className="py-4 text-sm text-rx-muted">No sales recorded yet.</p>
+            ) : (
+              <ul className="space-y-3">
+                {sales.map((sale) => (
+                  <li
+                    key={sale.sale_id}
+                    className="flex flex-wrap items-center justify-between gap-2 border-b border-rx-border pb-3 last:border-0"
+                  >
+                    <div>
+                      <p className="font-semibold">{formatCurrency(Number(sale.total_amount))}</p>
+                      <p className="text-xs text-rx-muted">
+                        {formatDate(sale.sale_date)} · {sale.user?.name}
+                        {sale.items?.length ? ` · ${sale.items.length} item(s)` : ""}
+                      </p>
+                    </div>
+                    <span className="text-sm font-medium text-emerald-400">
+                      +{formatCurrency(Number(sale.total_profit))}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <Pagination
+            page={salesPage}
+            lastPage={salesLastPage}
+            onPageChange={loadSales}
+            loading={salesLoading}
+          />
         </div>
       </div>
     </>

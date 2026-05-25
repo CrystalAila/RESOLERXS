@@ -99,6 +99,11 @@ class ProductController extends Controller
 
         $image = $product->image;
 
+        if ($request->boolean('remove_image')) {
+            $this->deleteImage($product->image);
+            $image = null;
+        }
+
         if ($request->hasFile('product_image')) {
             $this->deleteImage($product->image);
             $image = $this->storeImage($request, 'product_image');

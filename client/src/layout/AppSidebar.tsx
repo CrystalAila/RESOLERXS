@@ -1,4 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
+import BrandTitle from "../components/BrandTitle/BrandTitle";
 import { useSidebar } from "../contexts/SidebarContext";
 
 const navItems = [
@@ -30,9 +31,7 @@ const AppSidebar = () => {
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-rx-muted">
               Shoe Store
             </p>
-            <h1 className="text-2xl font-extrabold tracking-tight text-white">
-              RESOLER<span className="text-rx-accent">XS</span>
-            </h1>
+            <BrandTitle />
           </Link>
           <nav className="flex flex-1 flex-col gap-1">
             {navItems.map((item) => {
