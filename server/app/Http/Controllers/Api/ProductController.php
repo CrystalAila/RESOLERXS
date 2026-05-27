@@ -40,7 +40,7 @@ class ProductController extends Controller
             $products->lowStock();
         }
 
-        $products = $products->paginate(15);
+        $products = $products->paginate(10);
 
         return response()->json([
             'products' => ProductResource::collection($products)->response()->getData(true),

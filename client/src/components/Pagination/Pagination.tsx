@@ -16,7 +16,7 @@ const Pagination: FC<PaginationProps> = ({
   onPageChange,
   loading = false,
   total = 0,
-  perPage = 15,
+  perPage = 10,
   alwaysShow = false,
 }) => {
   if (!alwaysShow && lastPage <= 1 && total === 0) return null;

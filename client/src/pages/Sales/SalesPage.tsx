@@ -17,7 +17,6 @@ const SalesPage = () => {
   const { refreshLowStock } = useLowStock();
   const [products, setProducts] = useState<ProductColumns[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [notes, setNotes] = useState("");
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [sales, setSales] = useState<SaleColumns[]>([]);
@@ -122,12 +121,10 @@ const SalesPage = () => {
     setCheckoutLoading(true);
     try {
       const res = await SaleService.storeSale({
-        notes: notes || undefined,
         items: cart.map((c) => ({ product_id: c.product_id, quantity: c.quantity })),
       });
       toast.showToastMessage(res.data.message);
       setCart([]);
-      setNotes("");
       loadProducts();
       loadSales(salesPage);
       await refreshLowStock();
@@ -249,13 +246,6 @@ const SalesPage = () => {
                 <span className="font-bold">{formatCurrency(cartProfit)}</span>
               </div>
             </div>
-            <textarea
-              placeholder="Notes (optional)"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              className="mt-4 w-full rounded-lg border border-rx-border bg-rx-bg px-3 py-2 text-sm text-white placeholder:text-rx-muted focus:border-rx-accent focus:outline-none"
-              rows={2}
-            />
             <button
               type="button"
               onClick={checkout}
